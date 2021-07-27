@@ -42,7 +42,7 @@ namespace print_demo_info_immediate
 
             WriteLine($"Demo {demoName} stopped recording, printing info...");
             WriteLine(output);
-            MemoryHandler.writemsg(output);
+            MemoryHandler.writemsg(output + "\n");
 
         }
     }
