@@ -22,6 +22,7 @@ namespace print_demo_info_immediate
         private SigScanTarget _gameDirTarget;
         private SigScanTarget _demoRecorderTarget;
         private MemoryWatcher<bool> _demoIsRecording;
+        private MemoryWatcher<int> _demoIndex;
         private StringWatcher _demoName;
         private string _gameProcesName;
         private int _startTickOffset = -1;
@@ -135,6 +136,7 @@ namespace print_demo_info_immediate
                 }
 
                 _demoIsRecording = new MemoryWatcher<bool>(demoRecorderPtr + _startTickOffset + 4 + 260 + 1 + 1);
+                _demoIndex = new MemoryWatcher<int>(demoRecorderPtr + _startTickOffset + 4 + 260 + 1 + 1 + 2);
                 _demoName = new StringWatcher(demoRecorderPtr + _startTickOffset + 4, 100);
             }
 
@@ -163,10 +165,22 @@ namespace print_demo_info_immediate
                     return;
 
                 _demoIsRecording.Update(_game);
+                _demoIndex.Update(_game);
                 _demoName.Update(_game);
 
-                if (_demoIsRecording.Changed && !_demoIsRecording.Current)
-                    listdemo.DemoStopNotify(_demoName.Current.ToString(), _gameDir);
+                if ((_demoIsRecording.Changed && !_demoIsRecording.Current) || 
+                    (_demoIsRecording.Current && _demoIndex.Changed && _demoIndex.Current > 1))
+                {
+                    string path = _demoName.Current.ToString();
+
+                    if (_demoIndex.Changed && _demoIndex.Old > 1)
+                    {
+                        if (File.Exists(Path.Combine(_gameDir, $"{_demoName.Current}_{_demoIndex.Old}.dem")))
+                            path += $"_{_demoIndex.Old}";
+                    }
+
+                    listdemo.DemoStopNotify(path, _gameDir);
+                }
 
                 Thread.Sleep(10);
             }
